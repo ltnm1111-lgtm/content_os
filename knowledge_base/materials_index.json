@@ -1,0 +1,73 @@
+[
+  {
+    "material_id": "mat_20261014_210029",
+    "title": "216 CẤU TRÚC TIẾNG ANH ĂN TRỌN ĐIỂM V-ACT & THPTQG",
+    "subject": "Tiếng Anh VACT & THPTQG",
+    "cta_keyword": "Cấu trúc tiếng anh",
+    "created_at": "2026-10-14",
+    "file_path": "knowledge_base\\materials\\mat_20261014_210029.json"
+  },
+  {
+    "material_id": "mat_20261014_211927",
+    "title": "TRỌN BỘ CÔNG THỨC & MẸO GIẢI NHANH ĐGNL VACT ĐHQG TPHCM",
+    "subject": "Đánh giá năng lực VACT",
+    "cta_keyword": "VACT",
+    "source_url": "Tài liệu lưu hành nội bộ VACT Giga HCM",
+    "pdf_local_path": "",
+    "created_at": "2026-10-14",
+    "file_path": "knowledge_base\\materials\\mat_20261014_211927.json"
+  },
+  {
+    "material_id": "mat_20261014_212353",
+    "title": "BỘ TÀI LIỆU ÔN THI ĐGNL VACT - CẬP NHẬT MỚI NHẤT 2K9",
+    "subject": "Ôn thi ĐGNL VACT",
+    "cta_keyword": "VACT",
+    "source_url": "https://tuoitre.vn/giao-duc.htm",
+    "pdf_local_path": "",
+    "created_at": "2026-10-14",
+    "file_path": "knowledge_base\\materials\\mat_20261014_212353.json"
+  },
+  {
+    "material_id": "mat_20261014_212801",
+    "title": "TỔNG HỢP CẤU TRÚC TIẾNG ANH TRỌNG TÂM THI ĐGNL VACT & THPTQG",
+    "subject": "Tiếng Anh VACT",
+    "cta_keyword": "Cấu trúc tiếng anh",
+    "source_url": "Chưa có link PDF công khai",
+    "pdf_local_path": "",
+    "created_at": "2026-10-14",
+    "file_path": "knowledge_base\\materials\\mat_20261014_212801.json"
+  },
+  {
+    "material_id": "mat_20261014_213033",
+    "title": "TỔNG HỢP 200+ CẤU TRÚC TIẾNG ANH TRỌNG TÂM THI ĐGNL VACT",
+    "subject": "Tiếng Anh VACT",
+    "cta_keyword": "Cấu trúc tiếng anh",
+    "source_url": "https://drive.google.com/file/d/1vActEnglish2026_SampleDoc/view",
+    "pdf_local_path": "",
+    "created_at": "2026-10-14",
+    "file_path": "knowledge_base\\materials\\mat_20261014_213033.json"
+  },
+  {
+    "material_id": "mat_20261014_213704",
+    "title": "Bảng Xếp Hạng 50 Nhà Bán Lẻ Toàn Cầu - Tài Liệu Phân Tích Số Liệu ĐGNL",
+    "subject": "Tiếng Anh VACT",
+    "cta_keyword": "RETAIL",
+    "source_url": "https://cdn2.hubspot.net/hubfs/3788602/Kantar_Top50_Global.pdf",
+    "pdf_local_path": "knowledge_base\\pdfs\\mat_20261014_213704.pdf",
+    "created_at": "2026-10-14",
+    "file_path": "knowledge_base\\materials\\mat_20261014_213704.json"
+  },
+  {
+    "material_id": "mat_20261014_220002",
+    "title": "Bí kíp 'về đích' chương Hàm số: Tổng hợp toàn bộ lý thuyết & công thức Toán 12",
+    "subject": "Toán",
+    "cta_keyword": "HAMSO",
+    "source_site": "tailieu365",
+    "source_url": "https://drive.google.com/file/d/1OUZFQfv4GP3r04zRv9dUtjKYjtJpXcZG/view",
+    "link_type": "drive",
+    "post_url": "https://tailieu365.vn/pdf-cong-thuc-ham-so/",
+    "pdf_local_path": "",
+    "created_at": "2026-10-14",
+    "file_path": "knowledge_base\\materials\\mat_20261014_220002.json"
+  }
+]
