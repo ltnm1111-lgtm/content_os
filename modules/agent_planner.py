@@ -3,6 +3,7 @@ import json
 import os
 import sys
 from datetime import datetime
+from modules.social_scraper import fetch_all_competitor_insights
 
 # Tự động thêm thư mục gốc dự án (content_os) vào Python path để tránh lỗi Import
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -79,21 +80,29 @@ class PlannerAgent:
         self.client = genai.Client(api_key=self.api_key)
 
     def generate_weekly_plan(self, week_topic: str = "Tập trung kiến thức trọng tâm & tâm lý thi VACT 2k9") -> dict:
-        """Agent phân tích chủ đề tuần và xuất kế hoạch 5-7 bài viết chuẩn định dạng JSON."""
         
-        # 1. Thu thập tin tức thời gian thực bằng Tool
-        print(f"🔍 Agent 1 (Research) đang tìm tin tức liên quan đến: '{week_topic}'...")
+        # 1. Thu thập tin tức thời gian thực từ DuckDuckGo
+        print(f"🔍 Agent 1 (Research) đang tìm tin tức: '{week_topic}'...")
         search_data = search_vact_news("lịch thi đánh giá năng lực ĐHQG TPHCM VACT mới nhất")
 
-        # 2. Xây dựng Prompt cho Agent Planner
+        # 2. Thu thập dữ liệu từ các Kênh TikTok/FB chỉ định & Kênh tự tìm
+        print("📲 Agent đang phân tích nội dung từ các kênh TikTok/FB đối thủ...")
+        competitor_data = fetch_all_competitor_insights(keyword=week_topic)
+
+        # 3. Xây dựng Prompt tổng hợp
         system_instruction = self.brain.get_system_context()
         
         prompt = f"""
 Bạn là Agent 2 (Content Planner) của VACT Giga HCM.
-Dựa vào dữ liệu nghiên cứu thị trường:
+Dựa vào 2 nguồn dữ liệu nghiên cứu thị trường:
+
+1. TIN TỨC CHÍNH THỐNG:
 {search_data}
 
-Hãy lập kế hoạch Content 5 bài đăng cho tuần tới với chủ đề chủ đạo: "{week_topic}".
+2. DỮ LIỆU BÀI VIẾT HOT TỪ CÁC KÊNH TIKTOK/FACEBOOK ĐỐI THỦ:
+{competitor_data}
+
+Hãy phân tích các chủ đề/gợi ý hot của đối thủ, kết hợp với tin tức chính thống để lập kế hoạch Content 5 bài đăng cho tuần tới với chủ đề chủ đạo: "{week_topic}".
 
 Yêu cầu đầu ra BẮT BUỘC trả về định dạng JSON thuần túy (không chứa markdown ```json):
 {{
@@ -105,14 +114,13 @@ Yêu cầu đầu ra BẮT BUỘC trả về định dạng JSON thuần túy (k
       "day": "Thứ 2",
       "channel": "Facebook / TikTok",
       "angle": "Góc nhìn/chủ đề bài viết",
-      "hook_idea": "Idea câu Hook thu hút học sinh 2k9",
+      "hook_idea": "Idea câu Hook dựa trên các video hot của đối thủ",
       "cta": "Lời kêu gọi hành động",
       "status": "Pending"
     }}
   ]
 }}
 """
-
         print("🤖 Agent 2 (Planner) đang tính toán và xây dựng kế hoạch tuần...")
         
         # 3. Gọi sinh nội dung bằng cơ chế Fallback tự động

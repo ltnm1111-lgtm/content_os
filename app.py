@@ -20,11 +20,10 @@ st.caption("Hệ thống quản trị và vận hành đội ngũ AI Agent tự 
 def get_latest_plan():
     files = glob.glob("data/weekly_plan_*.json")
     if not files:
-        return None
+        return None, None
     latest_file = max(files, key=os.path.getctime)
     with open(latest_file, "r", encoding="utf-8") as f:
         return json.load(f), latest_file
-    return None, None
 
 # --- KHU VỰC 1: TRẠNG THÁI CÁC AGENT (AGENTS STATUS BOARD) ---
 st.subheader("📊 Trạng thái Đội ngũ Agent")
@@ -44,7 +43,41 @@ with col4:
 
 st.divider()
 
-# --- KHU VỰC 2: CHẶNG 1 - TẠO VÀ DUYỆT PLAN (HUMAN-IN-THE-LOOP) ---
+# --- KHU VỰC 2: QUẢN LÝ KÊNH TIKTOK / FB ĐỐI THỦ ---
+st.header("🔗 Quản lý Kênh TikTok / FB Đối thủ")
+
+competitor_file = "knowledge_base/competitor_channels.json"
+if os.path.exists(competitor_file):
+    with open(competitor_file, "r", encoding="utf-8") as f:
+        comp_data = json.load(f)
+else:
+    comp_data = {"user_provided_channels": [], "discovered_channels": []}
+
+col_c1, col_c2 = st.columns([2, 1])
+with col_c1:
+    new_channel_url = st.text_input("Thêm link kênh TikTok/FB đối thủ (VD: https://www.tiktok.com/@username):")
+with col_c2:
+    new_channel_name = st.text_input("Tên gợi nhớ của kênh:")
+
+if st.button("➕ Thêm Kênh vào Hệ thống"):
+    if new_channel_url:
+        comp_data["user_provided_channels"].append({
+            "platform": "TikTok" if "tiktok" in new_channel_url else "Facebook",
+            "name": new_channel_name if new_channel_name else "Kênh đối thủ",
+            "url": new_channel_url
+        })
+        os.makedirs("knowledge_base", exist_ok=True)
+        with open(competitor_file, "w", encoding="utf-8") as f:
+            json.dump(comp_data, f, ensure_ascii=False, indent=2)
+        st.success("✅ Đã thêm kênh thành công!")
+        st.rerun()
+
+st.caption("📋 Danh sách các kênh Agent đang theo dõi:")
+st.json(comp_data["user_provided_channels"])
+
+st.divider()
+
+# --- KHU VỰC 3: CHẶNG 1 - TẠO VÀ DUYỆT PLAN (HUMAN-IN-THE-LOOP) ---
 st.header("🎯 Chặng 1: Lên Kế hoạch Content Tuần")
 
 topic_input = st.text_input(
@@ -53,22 +86,21 @@ topic_input = st.text_input(
 )
 
 if st.button("🚀 Kích hoạt Agent 1 & 2 (Nghiên cứu & Lên Plan)", type="primary"):
-    with st.spinner("🤖 Agent đang tìm kiếm tin tức trên DuckDuckGo và lập kế hoạch..."):
+    with st.spinner("🤖 Agent đang cào dữ liệu TikTok/FB & DuckDuckGo để lập kế hoạch..."):
         try:
             planner = PlannerAgent()
             plan = planner.generate_weekly_plan(week_topic=topic_input)
-            st.success("✅ Đã lập thành công Lịch Content Tuần mới!")
+            st.success("✅ Đã lập thành công Lịch Content Tuần mới dựa trên tin tức & kênh đối thủ!")
             st.rerun()
         except Exception as e:
             st.error(f"❌ Lỗi khi chạy Agent: {str(e)}")
 
-# --- HIỂN THỊ KẾ HOẠCH BÀI VIẾT VÀ NÚT DUYỆT (BƯỚC CON NGƯỜI DUYỆT) ---
+# --- HIỂN THỊ KẾ HOẠCH BÀI VIẾT VÀ NÚT DUYỆT (HUMAN APPROVAL) ---
 if has_plan:
     st.subheader(f"📅 Bảng Kế hoạch Tuần (Tạo ngày: {latest_plan.get('created_at', 'N/A')})")
     
     posts = latest_plan.get("posts", [])
     
-    # Hiển thị dạng bảng trực quan
     st.dataframe(
         posts,
         column_config={
@@ -85,7 +117,6 @@ if has_plan:
 
     st.divider()
     
-    # --- NÚT BẤM DUYỆT CỦA CON NGƯỜI (HUMAN APPROVAL) ---
     st.warning("🟧 STEP CỦA BẠN (HUMAN-IN-THE-LOOP): Duyệt Kế hoạch trước khi chuyển sang Chặng 2")
     
     col_approve, col_reject = st.columns([1, 4])
