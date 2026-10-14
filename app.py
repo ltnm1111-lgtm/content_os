@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 if "GEMINI_API_KEY" in st.secrets:
     os.environ["GEMINI_API_KEY"] = st.secrets["GEMINI_API_KEY"]
 
-from modules.agent_planner import PlannerAgent
+from modules.agent_planner import PlannerAgents
 
 # --- CẤU HÌNH TRANG WEB ---
 st.set_page_config(page_title="VACT Giga - Content OS", page_icon="🚀", layout="wide")
@@ -102,7 +102,10 @@ st.json(st.session_state["comp_data"]["user_provided_channels"])
 
 st.divider()
 
-# --- KHU VỰC 3: CHẶNG 1 - TẠO VÀ DUYỆT PLAN (HUMAN-IN-THE-LOOP) ---
+# Thêm import module cào ở đầu file app.py nếu chưa có
+from modules.social_scraper import fetch_all_competitor_insights
+
+# --- KHU VỰC 3: CHẶNG 1 - TẠO VÀ DUYỆT PLAN ---
 st.header("🎯 Chặng 1: Lên Kế hoạch Content Tuần")
 
 topic_input = st.text_input(
@@ -111,15 +114,43 @@ topic_input = st.text_input(
 )
 
 if st.button("🚀 Kích hoạt Agent 1 & 2 (Nghiên cứu & Lên Plan)", type="primary"):
-    with st.spinner("🤖 Agent đang cào dữ liệu TikTok/FB & DuckDuckGo để lập kế hoạch..."):
+    with st.spinner("🤖 Agent 1 đang cào dữ liệu TikTok/FB & tìm kênh mới..."):
         try:
+            # 1. Cào dữ liệu từ các kênh đối thủ
+            raw_insights = fetch_all_competitor_insights(keyword=topic_input)
+            parsed_insights = json.loads(raw_insights)
+            
+            # Lưu vĩnh viễn dữ liệu cào ra file để không bị mất khi F5
+            os.makedirs("data", exist_ok=True)
+            with open("data/latest_research.json", "w", encoding="utf-8") as f:
+                json.dump(parsed_insights, f, ensure_ascii=False, indent=2)
+            
+            # 2. Chạy Agent Planner tạo Lịch Content
             planner = PlannerAgent()
             plan = planner.generate_weekly_plan(week_topic=topic_input)
-            st.success("✅ Đã lập thành công Lịch Content Tuần mới dựa trên tin tức & kênh đối thủ!")
+            st.success("✅ Đã cào dữ liệu đối thủ & tạo Plan mới thành công!")
             st.rerun()
         except Exception as e:
             st.error(f"❌ Lỗi khi chạy Agent: {str(e)}")
 
+# --- HIỂN THỊ DỮ LIỆU NGHIÊN CỨU THỰC TẾ CỦA AGENT 1 ---
+research_file = "data/latest_research.json"
+if os.path.exists(research_file):
+    try:
+        with open(research_file, "r", encoding="utf-8") as f:
+            latest_research = json.load(f)
+            
+        st.divider()
+        with st.expander("🔍 Xem dữ liệu Agent 1 cào từ các kênh đối thủ & Kênh tự phát hiện", expanded=True):
+            col_r1, col_r2 = st.columns(2)
+            with col_r1:
+                st.subheader("1. Video mới cào từ các kênh bạn chỉ định:")
+                st.json(latest_research.get("user_channels_insights", []))
+            with col_r2:
+                st.subheader("2. Kênh / bài viết tương tự Agent tự phát hiện:")
+                st.json(latest_research.get("auto_discovered_trends", []))
+    except Exception as e:
+        pass
 # --- HIỂN THỊ KẾ HOẠCH BÀI VIẾT VÀ NÚT DUYỆT (HUMAN APPROVAL) ---
 if has_plan:
     st.subheader(f"📅 Bảng Kế hoạch Tuần (Tạo ngày: {latest_plan.get('created_at', 'N/A')})")
