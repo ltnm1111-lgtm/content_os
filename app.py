@@ -5,8 +5,31 @@ import sys
 import glob
 import streamlit as st
 
-# --- IMPORT THÊM Ở ĐẦU FILE APP.PY ---
+# Tự động nạp thư mục gốc vào hệ thống
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Nạp API Key từ Streamlit Secrets vào biến môi trường
+if "GEMINI_API_KEY" in st.secrets:
+    os.environ["GEMINI_API_KEY"] = st.secrets["GEMINI_API_KEY"]
+
+from modules.agent_planner import PlannerAgent
 from modules.agent_writer import WriterAgent
+from modules.social_scraper import fetch_all_competitor_insights
+
+# --- CẤU HÌNH TRANG WEB ---
+st.set_page_config(page_title="VACT Giga - Content OS", page_icon="🚀", layout="wide")
+
+st.title("🤖 VACT Giga HCM - AI Content OS Dashboard")
+st.caption("Hệ thống quản trị và vận hành đội ngũ AI Agent tự động")
+
+# --- HÀM HỖ TRỢ ĐỌC DỮ LIỆU ---
+def get_latest_plan():
+    files = glob.glob("data/weekly_plan_*.json")
+    if not files:
+        return None, None
+    latest_file = max(files, key=os.path.getctime)
+    with open(latest_file, "r", encoding="utf-8") as f:
+        return json.load(f), latest_file
 
 def get_latest_drafts():
     files = glob.glob("data/weekly_drafts_*.json")
@@ -16,31 +39,7 @@ def get_latest_drafts():
     with open(latest_file, "r", encoding="utf-8") as f:
         return json.load(f)
 
-# Tự động nạp thư mục gốc vào hệ thống
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Nạp API Key từ Streamlit Secrets vào biến môi trường
-if "GEMINI_API_KEY" in st.secrets:
-    os.environ["GEMINI_API_KEY"] = st.secrets["GEMINI_API_KEY"]
-
-from modules.agent_planner import PlannerAgent
-
-# --- CẤU HÌNH TRANG WEB ---
-st.set_page_config(page_title="VACT Giga - Content OS", page_icon="🚀", layout="wide")
-
-st.title("🤖 VACT Giga HCM - AI Content OS Dashboard")
-st.caption("Hệ thống quản trị và vận hành đội ngũ AI Agent tự động")
-
-# --- HÀM HỖ TRỢ LẤY FILE PLAN MỚI NHẤT ---
-def get_latest_plan():
-    files = glob.glob("data/weekly_plan_*.json")
-    if not files:
-        return None, None
-    latest_file = max(files, key=os.path.getctime)
-    with open(latest_file, "r", encoding="utf-8") as f:
-        return json.load(f), latest_file
-
-# --- KHU VỰC 1: TRẠNG THÁI CÁC AGENT (AGENTS STATUS BOARD) ---
+# --- KHU VỰC 1: TRẠNG THÁI CÁC AGENT ---
 st.subheader("📊 Trạng thái Đội ngũ Agent")
 col1, col2, col3, col4 = st.columns(4)
 
@@ -63,7 +62,6 @@ st.header("🔗 Quản lý Kênh TikTok / FB Đối thủ")
 
 competitor_file = os.path.join("knowledge_base", "competitor_channels.json")
 
-# Hàm đọc dữ liệu từ file JSON
 def load_competitor_channels():
     if os.path.exists(competitor_file):
         try:
@@ -73,19 +71,17 @@ def load_competitor_channels():
             pass
     return {"user_provided_channels": [], "discovered_channels": []}
 
-# Hàm ghi dữ liệu vĩnh viễn vào file JSON
 def save_competitor_channels(data):
     os.makedirs("knowledge_base", exist_ok=True)
     with open(competitor_file, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-# Khởi tạo bộ nhớ tạm (Session State) để không bị mất kênh khi reload
 if "comp_data" not in st.session_state:
     st.session_state["comp_data"] = load_competitor_channels()
 
 col_c1, col_c2 = st.columns([2, 1])
 with col_c1:
-    new_channel_url = st.text_input("Thêm link kênh TikTok/FB đối thủ (VD: https://www.tiktok.com/@username):", key="input_url")
+    new_channel_url = st.text_input("Thêm link kênh TikTok/FB đối thủ:", key="input_url")
 with col_c2:
     new_channel_name = st.text_input("Tên gợi nhớ của kênh:", key="input_name")
 
@@ -96,14 +92,11 @@ if st.button("➕ Thêm Kênh vào Hệ thống"):
             "name": new_channel_name if new_channel_name else "Kênh đối thủ",
             "url": new_channel_url
         }
-        
-        # Kiểm tra trùng lặp link
         existing_urls = [c.get("url") for c in st.session_state["comp_data"]["user_provided_channels"]]
         if new_channel_url not in existing_urls:
-            # Thêm vào Session State và Lưu ra ổ đĩa
             st.session_state["comp_data"]["user_provided_channels"].append(new_item)
             save_competitor_channels(st.session_state["comp_data"])
-            st.success("✅ Đã thêm kênh và tự động lưu vào hệ thống!")
+            st.success("✅ Đã thêm kênh vào hệ thống!")
             st.rerun()
         else:
             st.warning("⚠️ Kênh này đã có trong danh sách theo dõi!")
@@ -112,9 +105,6 @@ st.caption("📋 Danh sách các kênh Agent đang theo dõi:")
 st.json(st.session_state["comp_data"]["user_provided_channels"])
 
 st.divider()
-
-# Thêm import module cào ở đầu file app.py nếu chưa có
-from modules.social_scraper import fetch_all_competitor_insights
 
 # --- KHU VỰC 3: CHẶNG 1 - TẠO VÀ DUYỆT PLAN ---
 st.header("🎯 Chặng 1: Lên Kế hoạch Content Tuần")
@@ -125,18 +115,15 @@ topic_input = st.text_input(
 )
 
 if st.button("🚀 Kích hoạt Agent 1 & 2 (Nghiên cứu & Lên Plan)", type="primary"):
-    with st.spinner("🤖 Agent 1 đang cào dữ liệu TikTok/FB & tìm kênh mới..."):
+    with st.spinner("🤖 Agent 1 đang cào dữ liệu TikTok/FB & Planner Agent tạo Lịch..."):
         try:
-            # 1. Cào dữ liệu từ các kênh đối thủ
             raw_insights = fetch_all_competitor_insights(keyword=topic_input)
             parsed_insights = json.loads(raw_insights)
             
-            # Lưu vĩnh viễn dữ liệu cào ra file để không bị mất khi F5
             os.makedirs("data", exist_ok=True)
             with open("data/latest_research.json", "w", encoding="utf-8") as f:
                 json.dump(parsed_insights, f, ensure_ascii=False, indent=2)
             
-            # 2. Chạy Agent Planner tạo Lịch Content
             planner = PlannerAgent()
             plan = planner.generate_weekly_plan(week_topic=topic_input)
             st.success("✅ Đã cào dữ liệu đối thủ & tạo Plan mới thành công!")
@@ -144,28 +131,26 @@ if st.button("🚀 Kích hoạt Agent 1 & 2 (Nghiên cứu & Lên Plan)", type="
         except Exception as e:
             st.error(f"❌ Lỗi khi chạy Agent: {str(e)}")
 
-# --- HIỂN THỊ DỮ LIỆU NGHIÊN CỨU THỰC TẾ CỦA AGENT 1 ---
+# HIỂN THỊ DỮ LIỆU CÀO
 research_file = "data/latest_research.json"
 if os.path.exists(research_file):
     try:
         with open(research_file, "r", encoding="utf-8") as f:
             latest_research = json.load(f)
-            
-        st.divider()
-        with st.expander("🔍 Xem dữ liệu Agent 1 cào từ các kênh đối thủ & Kênh tự phát hiện", expanded=True):
+        with st.expander("🔍 Xem dữ liệu cào từ các kênh đối thủ & Trend", expanded=False):
             col_r1, col_r2 = st.columns(2)
             with col_r1:
-                st.subheader("1. Video mới cào từ các kênh bạn chỉ định:")
+                st.subheader("1. Insight kênh chỉ định:")
                 st.json(latest_research.get("user_channels_insights", []))
             with col_r2:
-                st.subheader("2. Kênh / bài viết tương tự Agent tự phát hiện:")
+                st.subheader("2. Trend tự phát hiện:")
                 st.json(latest_research.get("auto_discovered_trends", []))
-    except Exception as e:
+    except Exception:
         pass
-# --- HIỂN THỊ KẾ HOẠCH BÀI VIẾT VÀ NÚT DUYỆT (HUMAN APPROVAL) ---
+
+# HIỂN THỊ BẢNG KẾ HOẠCH & DUYỆT PLAN
 if has_plan:
     st.subheader(f"📅 Bảng Kế hoạch Tuần (Tạo ngày: {latest_plan.get('created_at', 'N/A')})")
-    
     posts = latest_plan.get("posts", [])
     
     st.dataframe(
@@ -183,59 +168,55 @@ if has_plan:
     )
 
     st.divider()
-    
     st.warning("🟧 STEP CỦA BẠN (HUMAN-IN-THE-LOOP): Duyệt Kế hoạch trước khi chuyển sang Chặng 2")
     
     col_approve, col_reject = st.columns([1, 4])
     with col_approve:
-        if st.button("✅ DUYỆT PLAN (Chạy tiếp Chặng 2)"):
+        if st.button("✅ DUYỆT PLAN (Chạy tiếp Chặng 2)", key="btn_approve_plan"):
+            st.session_state["plan_approved"] = True
+            
+            # Ghi file latest_plan.json chuẩn xác
+            os.makedirs("data", exist_ok=True)
+            with open("data/latest_plan.json", "w", encoding="utf-8") as f:
+                json.dump(latest_plan, f, ensure_ascii=False, indent=2)
+                
             st.balloons()
             st.success("🎉 Bạn đã duyệt Plan! Sẵn sàng kích hoạt Agent Viết bài (Chặng 2).")
+            st.rerun()
+
     with col_reject:
-        if st.button("❌ Bỏ qua / Tạo lại Plan khác"):
+        if st.button("❌ Bỏ qua / Tạo lại Plan khác", key="btn_reject_plan"):
             st.info("Hãy nhập lại chủ đề trên thanh tìm kiếm và bấm Kích hoạt lại.")
 else:
     st.info("Chưa có kế hoạch nào được tạo. Hãy bấm nút phía trên để Agent bắt đầu làm việc.")
-
-if st.button("✅ DUYỆT PLAN (Chạy tiếp Chặng 2)"):
-    st.session_state["plan_approved"] = True
-    
-    # BẮT BỘ LƯU FILE PLAN ĐỂ CHẶNG 2 NHẬN DIỆN:
-    if "latest_plan" in st.session_state:
-        os.makedirs("data", exist_ok=True)
-        with open("data/latest_plan.json", "w", encoding="utf-8") as f:
-            json.dump(st.session_state["latest_plan"], f, ensure_ascii=False, indent=2)
-            
-    st.success("🎉 Bạn đã duyệt Plan! Sẵn sàng kích hoạt Agent Viết bài (Chặng 2).")
-    st.rerun()
 
 # --- KHU VỰC CHẶNG 2: BẢN THẢO BÀI VIẾT TỪ AGENT WRITER ---
 st.divider()
 st.header("✍️ Chặng 2: Tạo Bản thảo Nội dung Chi tiết (Writer Agent)")
 
-if "latest_plan" in st.session_state or os.path.exists("data/latest_plan.json"):
+plan_to_use = None
+if os.path.exists("data/latest_plan.json"):
+    with open("data/latest_plan.json", "r", encoding="utf-8") as f:
+        plan_to_use = json.load(f)
+elif has_plan:
+    plan_to_use = latest_plan
+
+if plan_to_use:
     if st.button("🚀 Kích hoạt Writer Agent (Viết bài hàng loạt cho toàn bộ Plan)", type="primary"):
         with st.spinner("🤖 Writer Agent đang nhập vai 'Chị Đại' viết bài & kịch bản..."):
             try:
-                # Đọc plan mới nhất
-                with open("data/latest_plan.json", "r", encoding="utf-8") as f:
-                    latest_plan = json.load(f)
-                
                 writer = WriterAgent()
-                drafts = writer.generate_all_drafts(latest_plan)
+                drafts = writer.generate_all_drafts(plan_to_use)
                 st.success("✅ Writer Agent đã hoàn thành toàn bộ bản thảo cho tuần!")
                 st.rerun()
             except Exception as e:
                 st.error(f"❌ Lỗi khi tạo bài viết: {str(e)}")
 
-# --- HIỂN THỊ KẾT QUẢ BÀI VIẾT THEO THỨ TRONG TUẦN & NỀN TẢNG ---
+# HIỂN THỊ KẾT QUẢ BÀI VIẾT
 latest_drafts = get_latest_drafts()
 if latest_drafts:
     st.subheader(f"📅 Bản thảo Tuần (Chủ đề: {latest_drafts.get('plan_topic')})")
-    
     drafts = latest_drafts.get("drafts", [])
-    
-    # Gom nhóm bài viết theo Thứ trong tuần
     days_order = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"]
     
     for day in days_order:
@@ -243,7 +224,6 @@ if latest_drafts:
         
         if day_posts or any(p.get("day") == day for p in drafts):
             st.markdown(f"### 🗓️ {day}")
-            
             posts_to_show = [p for p in drafts if p.get("day") == day]
             if not posts_to_show:
                 posts_to_show = day_posts
@@ -252,7 +232,6 @@ if latest_drafts:
                 channel = post.get("channel", "Facebook")
                 fmt = post.get("format_type", "")
                 
-                # Tag nhãn nền tảng & dạng bài
                 if "TikTok" in channel:
                     badge = "🎵 TikTok Script"
                 elif fmt == "FB_LEAD_GEN" or "Dạng 1" in post.get("angle", ""):
@@ -263,14 +242,12 @@ if latest_drafts:
                     badge = "📘 FB Dạng 3: Text-Overlay Video"
 
                 with st.expander(f"{badge} | Angle: {post.get('angle')}", expanded=True):
-                    # HIỂN THỊ LINK URL TÀI LIỆU GỐC CHO FB DẠNG 1
                     if post.get("source_url"):
                         st.info(f"🔗 **URL Tài liệu học tập gốc:** [{post.get('source_url')}]({post.get('source_url')})")
                     
                     st.markdown("**Nội dung chi tiết:**")
                     st.markdown(post.get("content"))
                     
-                    # Ô chỉnh sửa trực tiếp Co-pilot
                     st.text_area(
                         "✏️ Co-pilot (Chỉnh sửa nội dung nếu muốn):",
                         value=post.get("content"),
