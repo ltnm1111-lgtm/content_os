@@ -75,23 +75,24 @@ def generate_with_fallback(client, contents: str, system_instruction: str, tempe
 
 
 class PlannerAgent:
-    def __init__(self):
+    def __init__(self, api_key: str = None):
         self.brain = BrandBrain()
         
-        # 1. Ưu tiên lấy API Key từ .env (chạy Local)
-        self.api_key = os.getenv("GEMINI_API_KEY", "")
+        # 1. Lấy Key truyền trực tiếp hoặc từ os.getenv
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY", "")
         
-        # 2. Nếu chạy trên Streamlit Cloud, tự động lấy từ st.secrets
+        # 2. Nếu chưa có, thử lấy trực tiếp từ Streamlit Secrets
         if not self.api_key:
             try:
-                if "GEMINI_API_KEY" in st.secrets:
-                    self.api_key = st.secrets["GEMINI_API_KEY"]
+                self.api_key = st.secrets.get("GEMINI_API_KEY", "")
             except Exception:
                 pass
 
+        # 3. Kiểm tra lần cuối
         if not self.api_key:
-            raise ValueError("Chưa tìm thấy GEMINI_API_KEY! Hãy kiểm tra file .env hoặc cấu hình Secrets trên Streamlit Cloud.")
+            raise ValueError("Không tìm thấy GEMINI_API_KEY! Hãy kiểm tra file .env hoặc mục Secrets trên Streamlit Cloud.")
 
+        # Khởi tạo client với API Key chính xác
         self.client = genai.Client(api_key=self.api_key)
 
     def generate_weekly_plan(self, week_topic: str = "Tập trung kiến thức trọng tâm & tâm lý thi VACT 2k9") -> dict:

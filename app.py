@@ -8,6 +8,10 @@ import streamlit as st
 # Tự động nạp thư mục gốc vào hệ thống
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Nạp API Key từ Streamlit Secrets vào biến môi trường
+if "GEMINI_API_KEY" in st.secrets:
+    os.environ["GEMINI_API_KEY"] = st.secrets["GEMINI_API_KEY"]
+
 from modules.agent_planner import PlannerAgent
 
 # --- CẤU HÌNH TRANG WEB ---
