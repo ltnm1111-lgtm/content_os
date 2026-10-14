@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 if "GEMINI_API_KEY" in st.secrets:
     os.environ["GEMINI_API_KEY"] = st.secrets["GEMINI_API_KEY"]
 
-from modules.agent_planner import PlannerAgents
+from modules.agent_planner import PlannerAgent
 
 # --- CẤU HÌNH TRANG WEB ---
 st.set_page_config(page_title="VACT Giga - Content OS", page_icon="🚀", layout="wide")
