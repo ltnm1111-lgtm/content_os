@@ -46,34 +46,55 @@ st.divider()
 # --- KHU VỰC 2: QUẢN LÝ KÊNH TIKTOK / FB ĐỐI THỦ ---
 st.header("🔗 Quản lý Kênh TikTok / FB Đối thủ")
 
-competitor_file = "knowledge_base/competitor_channels.json"
-if os.path.exists(competitor_file):
-    with open(competitor_file, "r", encoding="utf-8") as f:
-        comp_data = json.load(f)
-else:
-    comp_data = {"user_provided_channels": [], "discovered_channels": []}
+competitor_file = os.path.join("knowledge_base", "competitor_channels.json")
+
+# Hàm đọc dữ liệu từ file JSON
+def load_competitor_channels():
+    if os.path.exists(competitor_file):
+        try:
+            with open(competitor_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"user_provided_channels": [], "discovered_channels": []}
+
+# Hàm ghi dữ liệu vĩnh viễn vào file JSON
+def save_competitor_channels(data):
+    os.makedirs("knowledge_base", exist_ok=True)
+    with open(competitor_file, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+# Khởi tạo bộ nhớ tạm (Session State) để không bị mất kênh khi reload
+if "comp_data" not in st.session_state:
+    st.session_state["comp_data"] = load_competitor_channels()
 
 col_c1, col_c2 = st.columns([2, 1])
 with col_c1:
-    new_channel_url = st.text_input("Thêm link kênh TikTok/FB đối thủ (VD: https://www.tiktok.com/@username):")
+    new_channel_url = st.text_input("Thêm link kênh TikTok/FB đối thủ (VD: https://www.tiktok.com/@username):", key="input_url")
 with col_c2:
-    new_channel_name = st.text_input("Tên gợi nhớ của kênh:")
+    new_channel_name = st.text_input("Tên gợi nhớ của kênh:", key="input_name")
 
 if st.button("➕ Thêm Kênh vào Hệ thống"):
     if new_channel_url:
-        comp_data["user_provided_channels"].append({
+        new_item = {
             "platform": "TikTok" if "tiktok" in new_channel_url else "Facebook",
             "name": new_channel_name if new_channel_name else "Kênh đối thủ",
             "url": new_channel_url
-        })
-        os.makedirs("knowledge_base", exist_ok=True)
-        with open(competitor_file, "w", encoding="utf-8") as f:
-            json.dump(comp_data, f, ensure_ascii=False, indent=2)
-        st.success("✅ Đã thêm kênh thành công!")
-        st.rerun()
+        }
+        
+        # Kiểm tra trùng lặp link
+        existing_urls = [c.get("url") for c in st.session_state["comp_data"]["user_provided_channels"]]
+        if new_channel_url not in existing_urls:
+            # Thêm vào Session State và Lưu ra ổ đĩa
+            st.session_state["comp_data"]["user_provided_channels"].append(new_item)
+            save_competitor_channels(st.session_state["comp_data"])
+            st.success("✅ Đã thêm kênh và tự động lưu vào hệ thống!")
+            st.rerun()
+        else:
+            st.warning("⚠️ Kênh này đã có trong danh sách theo dõi!")
 
 st.caption("📋 Danh sách các kênh Agent đang theo dõi:")
-st.json(comp_data["user_provided_channels"])
+st.json(st.session_state["comp_data"]["user_provided_channels"])
 
 st.divider()
 
