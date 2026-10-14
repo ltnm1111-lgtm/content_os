@@ -197,6 +197,18 @@ if has_plan:
 else:
     st.info("Chưa có kế hoạch nào được tạo. Hãy bấm nút phía trên để Agent bắt đầu làm việc.")
 
+if st.button("✅ DUYỆT PLAN (Chạy tiếp Chặng 2)"):
+    st.session_state["plan_approved"] = True
+    
+    # BẮT BỘ LƯU FILE PLAN ĐỂ CHẶNG 2 NHẬN DIỆN:
+    if "latest_plan" in st.session_state:
+        os.makedirs("data", exist_ok=True)
+        with open("data/latest_plan.json", "w", encoding="utf-8") as f:
+            json.dump(st.session_state["latest_plan"], f, ensure_ascii=False, indent=2)
+            
+    st.success("🎉 Bạn đã duyệt Plan! Sẵn sàng kích hoạt Agent Viết bài (Chặng 2).")
+    st.rerun()
+
 # --- KHU VỰC CHẶNG 2: BẢN THẢO BÀI VIẾT TỪ AGENT WRITER ---
 st.divider()
 st.header("✍️ Chặng 2: Tạo Bản thảo Nội dung Chi tiết (Writer Agent)")
