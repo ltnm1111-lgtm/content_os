@@ -2,255 +2,181 @@
 import json
 import os
 import sys
-import glob
-import streamlit as st
+from datetime import datetime
 
-# Tự động nạp thư mục gốc vào hệ thống
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Nạp API Key từ Streamlit Secrets vào biến môi trường
-if "GEMINI_API_KEY" in st.secrets:
-    os.environ["GEMINI_API_KEY"] = st.secrets["GEMINI_API_KEY"]
+from dotenv import load_dotenv
+load_dotenv()
 
-from modules.agent_planner import PlannerAgent
-from modules.agent_writer import WriterAgent
-from modules.social_scraper import fetch_all_competitor_insights
+from google import genai
+from google.genai import types
+from modules.brand_brain import BrandBrain
 
-# --- CẤU HÌNH TRANG WEB ---
-st.set_page_config(page_title="VACT Giga - Content OS", page_icon="🚀", layout="wide")
+DEFAULT_FALLBACK_MODELS = [
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
+]
 
-st.title("🤖 VACT Giga HCM - AI Content OS Dashboard")
-st.caption("Hệ thống quản trị và vận hành đội ngũ AI Agent tự động")
-
-# --- HÀM HỖ TRỢ ĐỌC DỮ LIỆU ---
-def get_latest_plan():
-    files = glob.glob("data/weekly_plan_*.json")
-    if not files:
-        return None, None
-    latest_file = max(files, key=os.path.getctime)
-    with open(latest_file, "r", encoding="utf-8") as f:
-        return json.load(f), latest_file
-
-def get_latest_drafts():
-    files = glob.glob("data/weekly_drafts_*.json")
-    if not files:
-        return None
-    latest_file = max(files, key=os.path.getctime)
-    with open(latest_file, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-# --- KHU VỰC 1: TRẠNG THÁI CÁC AGENT ---
-st.subheader("📊 Trạng thái Đội ngũ Agent")
-col1, col2, col3, col4 = st.columns(4)
-
-latest_plan, file_path = get_latest_plan()
-has_plan = latest_plan is not None
-
-with col1:
-    st.metric(label="Agent 1 & 2 (Research & Plan)", value="🟢 Đã sẵn sàng")
-with col2:
-    st.metric(label="Agent 3 (Writer)", value="🟢 Đã sẵn sàng" if has_plan else "⚪ Chờ Plan")
-with col3:
-    st.metric(label="Agent 4 (Evaluator)", value="🟢 Đã sẵn sàng" if has_plan else "⚪ Chờ Bài viết")
-with col4:
-    st.metric(label="Kế hoạch hiện tại", value=os.path.basename(file_path) if file_path else "Chưa có")
-
-st.divider()
-
-# --- KHU VỰC 2: QUẢN LÝ KÊNH TIKTOK / FB ĐỐI THỦ ---
-st.header("🔗 Quản lý Kênh TikTok / FB Đối thủ")
-
-competitor_file = os.path.join("knowledge_base", "competitor_channels.json")
-
-def load_competitor_channels():
-    if os.path.exists(competitor_file):
-        try:
-            with open(competitor_file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {"user_provided_channels": [], "discovered_channels": []}
-
-def save_competitor_channels(data):
-    os.makedirs("knowledge_base", exist_ok=True)
-    with open(competitor_file, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-if "comp_data" not in st.session_state:
-    st.session_state["comp_data"] = load_competitor_channels()
-
-col_c1, col_c2 = st.columns([2, 1])
-with col_c1:
-    new_channel_url = st.text_input("Thêm link kênh TikTok/FB đối thủ:", key="input_url")
-with col_c2:
-    new_channel_name = st.text_input("Tên gợi nhớ của kênh:", key="input_name")
-
-if st.button("➕ Thêm Kênh vào Hệ thống"):
-    if new_channel_url:
-        new_item = {
-            "platform": "TikTok" if "tiktok" in new_channel_url else "Facebook",
-            "name": new_channel_name if new_channel_name else "Kênh đối thủ",
-            "url": new_channel_url
-        }
-        existing_urls = [c.get("url") for c in st.session_state["comp_data"]["user_provided_channels"]]
-        if new_channel_url not in existing_urls:
-            st.session_state["comp_data"]["user_provided_channels"].append(new_item)
-            save_competitor_channels(st.session_state["comp_data"])
-            st.success("✅ Đã thêm kênh vào hệ thống!")
-            st.rerun()
-        else:
-            st.warning("⚠️ Kênh này đã có trong danh sách theo dõi!")
-
-st.caption("📋 Danh sách các kênh Agent đang theo dõi:")
-st.json(st.session_state["comp_data"]["user_provided_channels"])
-
-st.divider()
-
-# --- KHU VỰC 3: CHẶNG 1 - TẠO VÀ DUYỆT PLAN ---
-st.header("🎯 Chặng 1: Lên Kế hoạch Content Tuần")
-
-topic_input = st.text_input(
-    "Chủ đề chủ đạo tuần này:",
-    value="Tập trung kiến thức trọng tâm & tâm lý thi VACT 2k9"
-)
-
-if st.button("🚀 Kích hoạt Agent 1 & 2 (Nghiên cứu & Lên Plan)", type="primary"):
-    with st.spinner("🤖 Agent 1 đang cào dữ liệu TikTok/FB & Planner Agent tạo Lịch..."):
-        try:
-            raw_insights = fetch_all_competitor_insights(keyword=topic_input)
-            parsed_insights = json.loads(raw_insights)
-            
-            os.makedirs("data", exist_ok=True)
-            with open("data/latest_research.json", "w", encoding="utf-8") as f:
-                json.dump(parsed_insights, f, ensure_ascii=False, indent=2)
-            
-            planner = PlannerAgent()
-            plan = planner.generate_weekly_plan(week_topic=topic_input)
-            st.success("✅ Đã cào dữ liệu đối thủ & tạo Plan mới thành công!")
-            st.rerun()
-        except Exception as e:
-            st.error(f"❌ Lỗi khi chạy Agent: {str(e)}")
-
-# HIỂN THỊ DỮ LIỆU CÀO
-research_file = "data/latest_research.json"
-if os.path.exists(research_file):
+def get_available_models(client):
     try:
-        with open(research_file, "r", encoding="utf-8") as f:
-            latest_research = json.load(f)
-        with st.expander("🔍 Xem dữ liệu cào từ các kênh đối thủ & Trend", expanded=False):
-            col_r1, col_r2 = st.columns(2)
-            with col_r1:
-                st.subheader("1. Insight kênh chỉ định:")
-                st.json(latest_research.get("user_channels_insights", []))
-            with col_r2:
-                st.subheader("2. Trend tự phát hiện:")
-                st.json(latest_research.get("auto_discovered_trends", []))
-    except Exception:
-        pass
+        models = []
+        for m in client.models.list():
+            name = m.name.replace("models/", "") if hasattr(m, "name") else str(m)
+            if "gemini" in name.lower() and "embed" not in name.lower():
+                models.append(name)
+        if models:
+            return models
+    except Exception as e:
+        print(f"⚠️ Không thể lấy danh sách model tự động ({e}). Dùng danh sách mặc định.")
+    return DEFAULT_FALLBACK_MODELS
 
-# HIỂN THỊ BẢNG KẾ HOẠCH & DUYỆT PLAN
-if has_plan:
-    st.subheader(f"📅 Bảng Kế hoạch Tuần (Tạo ngày: {latest_plan.get('created_at', 'N/A')})")
-    posts = latest_plan.get("posts", [])
-    
-    st.dataframe(
-        posts,
-        column_config={
-            "id": "STT",
-            "day": "Thứ",
-            "channel": "Kênh",
-            "angle": "Góc nhìn (Angle)",
-            "hook_idea": "Gợi ý câu Hook",
-            "cta": "CTA",
-            "status": "Trạng thái"
-        },
-        use_container_width=True
-    )
 
-    st.divider()
-    st.warning("🟧 STEP CỦA BẠN (HUMAN-IN-THE-LOOP): Duyệt Kế hoạch trước khi chuyển sang Chặng 2")
-    
-    col_approve, col_reject = st.columns([1, 4])
-    with col_approve:
-        if st.button("✅ DUYỆT PLAN (Chạy tiếp Chặng 2)", key="btn_approve_plan"):
-            st.session_state["plan_approved"] = True
-            
-            # Ghi file latest_plan.json chuẩn xác
-            os.makedirs("data", exist_ok=True)
-            with open("data/latest_plan.json", "w", encoding="utf-8") as f:
-                json.dump(latest_plan, f, ensure_ascii=False, indent=2)
-                
-            st.balloons()
-            st.success("🎉 Bạn đã duyệt Plan! Sẵn sàng kích hoạt Agent Viết bài (Chặng 2).")
-            st.rerun()
-
-    with col_reject:
-        if st.button("❌ Bỏ qua / Tạo lại Plan khác", key="btn_reject_plan"):
-            st.info("Hãy nhập lại chủ đề trên thanh tìm kiếm và bấm Kích hoạt lại.")
-else:
-    st.info("Chưa có kế hoạch nào được tạo. Hãy bấm nút phía trên để Agent bắt đầu làm việc.")
-
-# --- KHU VỰC CHẶNG 2: BẢN THẢO BÀI VIẾT TỪ AGENT WRITER ---
-st.divider()
-st.header("✍️ Chặng 2: Tạo Bản thảo Nội dung Chi tiết (Writer Agent)")
-
-plan_to_use = None
-if os.path.exists("data/latest_plan.json"):
-    with open("data/latest_plan.json", "r", encoding="utf-8") as f:
-        plan_to_use = json.load(f)
-elif has_plan:
-    plan_to_use = latest_plan
-
-if plan_to_use:
-    if st.button("🚀 Kích hoạt Writer Agent (Viết bài hàng loạt cho toàn bộ Plan)", type="primary"):
-        with st.spinner("🤖 Writer Agent đang nhập vai 'Chị Đại' viết bài & kịch bản..."):
-            try:
-                writer = WriterAgent()
-                drafts = writer.generate_all_drafts(plan_to_use)
-                st.success("✅ Writer Agent đã hoàn thành toàn bộ bản thảo cho tuần!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"❌ Lỗi khi tạo bài viết: {str(e)}")
-
-# HIỂN THỊ KẾT QUẢ BÀI VIẾT
-latest_drafts = get_latest_drafts()
-if latest_drafts:
-    st.subheader(f"📅 Bản thảo Tuần (Chủ đề: {latest_drafts.get('plan_topic')})")
-    drafts = latest_drafts.get("drafts", [])
-    days_order = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"]
-    
-    for day in days_order:
-        day_posts = [p for p in drafts if p.get("day") == day or p.get("day") == f"Thứ {days_order.index(day)+2}"]
+class WriterAgent:
+    def __init__(self, api_key: str = None):
+        self.brain = BrandBrain()
         
-        if day_posts or any(p.get("day") == day for p in drafts):
-            st.markdown(f"### 🗓️ {day}")
-            posts_to_show = [p for p in drafts if p.get("day") == day]
-            if not posts_to_show:
-                posts_to_show = day_posts
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY", "")
+        if not self.api_key:
+            try:
+                import streamlit as st
+                if "GEMINI_API_KEY" in st.secrets:
+                    self.api_key = st.secrets["GEMINI_API_KEY"]
+            except Exception:
+                pass
 
-            for post in posts_to_show:
-                channel = post.get("channel", "Facebook")
-                fmt = post.get("format_type", "")
-                
-                if "TikTok" in channel:
-                    badge = "🎵 TikTok Script"
-                elif fmt == "FB_LEAD_GEN" or "Dạng 1" in post.get("angle", ""):
-                    badge = "📘 FB Dạng 1: Tặng Tài Liệu (Lead Gen)"
-                elif fmt == "FB_QUIZ" or "Dạng 2" in post.get("angle", ""):
-                    badge = "📘 FB Dạng 2: Quiz Tương Tác (Reaction)"
-                else:
-                    badge = "📘 FB Dạng 3: Text-Overlay Video"
+        if not self.api_key:
+            raise ValueError("❌ Không tìm thấy GEMINI_API_KEY cho Writer Agent!")
 
-                with st.expander(f"{badge} | Angle: {post.get('angle')}", expanded=True):
-                    if post.get("source_url"):
-                        st.info(f"🔗 **URL Tài liệu học tập gốc:** [{post.get('source_url')}]({post.get('source_url')})")
-                    
-                    st.markdown("**Nội dung chi tiết:**")
-                    st.markdown(post.get("content"))
-                    
-                    st.text_area(
-                        "✏️ Co-pilot (Chỉnh sửa nội dung nếu muốn):",
-                        value=post.get("content"),
-                        key=f"edit_{post.get('id')}_{day}",
-                        height=200
-                    )
+        self.client = genai.Client(api_key=self.api_key)
+
+    def _get_latest_material(self) -> dict:
+        """Đọc bộ tài liệu mới nhất từ kho MaterialAgent."""
+        if os.path.exists("knowledge_base/materials_index.json"):
+            try:
+                with open("knowledge_base/materials_index.json", "r", encoding="utf-8") as f:
+                    materials = json.load(f)
+                    if materials:
+                        return materials[-1]
+            except Exception:
+                pass
+        return {
+            "title": "TRỌN BỘ CẤU TRÚC TIẾNG ANH & BÀI TẬP VACT 2K9",
+            "cta_keyword": "Cấu trúc tiếng anh",
+            "source_url": "https://drive.google.com/file/d/1vActEnglish2026_SampleDoc/view",
+            "sample_content": "Tom's work as a college admissions officer, who is part-time, brings him some social skills."
+        }
+
+    def write_single_post(self, post_info: dict) -> dict:
+        channel = post_info.get("channel", "Facebook")
+        format_type = post_info.get("format_type", "FB_LEAD_GEN")
+        angle = post_info.get("angle", "")
+        hook_idea = post_info.get("hook_idea", "")
+        cta = post_info.get("cta", "")
+
+        # Đã sửa thêm self vào đây
+        material = self._get_latest_material()
+        system_instruction = self.brain.get_system_context()
+
+        if "TikTok" in channel or format_type == "TIKTOK":
+            format_req = """
+ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (Kịch bản TikTok):
+🎬 [3S HOOK ĐẦU]: Câu nói/cảnh quay cực giật gân, xoáy sâu vào tâm lý 2k9 thi VACT.
+🎥 [VISUAL NOTES]: Gợi ý chi tiết góc quay, hình ảnh đính kèm.
+🎙️ [AUDIO DIALOGUE]: Lời thoại dồn dập, tự nhiên chuẩn giọng 'Chị đại'.
+🎯 [CTA]: Lời kêu gọi ngắn gọn thúc đẩy bình luận/inbox.
+"""
+        elif format_type == "FB_LEAD_GEN" or "Tặng Tài liệu" in angle or "Dạng 1" in angle:
+            format_req = f"""
+ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (Facebook Dạng 1 - Tặng Tài Liệu Lead Gen):
+📌 [TIÊU ĐỀ]: In hoa, giật gân, dùng emoji gây chú ý về bộ tài liệu: '{material.get("title")}'.
+💎 [TÓM TẮT GIÁ TRỊ]: 3-4 dòng bullet points nêu rõ tài liệu giúp ích gì cho sĩ tử 2k9.
+👇 [CÔNG THỨC 3 BƯỚC NHẬN TÀI LIỆU]:
+   - Bước 1: Thả tim bài viết
+   - Bước 2: Share bài viết
+   - Bước 3: Comment từ khóa '{material.get("cta_keyword")}'
+🔗 [NỘI DUNG TÀI LIỆU GỐC]: Đính kèm thông tin tham khảo nguồn {material.get("source_url")}.
+"""
+        elif format_type == "FB_QUIZ" or "Quiz" in angle or "Dạng 2" in angle:
+            format_req = f"""
+ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (Facebook Dạng 2 - Quiz Tương Tác Thả Icon):
+❓ [ĐỀ BÀI/CÂU HỎI]: Trích xuất hoặc biên soạn 1 câu hỏi/lỗi sai ngắn gọn từ tài liệu: '{material.get("sample_content")}'.
+🎯 [4 ĐÁP ÁN GẮN ICON REACTION]:
+   😆 A. [Đáp án A]
+   👍 B. [Đáp án B]
+   ❤️ C. [Đáp án C]
+   😲 D. [Đáp án D]
+💬 [CTA]: Thúc đẩy học sinh thả cảm xúc tương ứng để chọn đáp án đúng.
+"""
+        else:
+            format_req = """
+ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (Facebook Dạng 3 - Text-Overlay Video):
+📝 [VĂN BẢN CHÈN VIDEO DỌC]:
+- Viết thành các dòng ngắn gọn dạng đạn (bullet points), thoáng mắt.
+- Dùng emoji sinh động (🧠, 💡, ⚡, 🎯) ở đầu mỗi dòng.
+- Không viết lời chào hay văn xuôi dài, đảm bảo ngắt dòng chuẩn để chèn vừa màn hình TikTok/Reels.
+"""
+
+        prompt = f"""
+Bạn là Agent Writer (Chị Đại VACT Giga HCM).
+Hãy viết bài dựa trên thông tin sau:
+- Nền tảng: {channel}
+- Angle: {angle}
+- Gợi ý Hook: {hook_idea}
+- Target CTA: {cta}
+
+{format_req}
+"""
+
+        models_to_try = get_available_models(self.client)
+        response = None
+        for model_name in models_to_try:
+            try:
+                response = self.client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.7
+                    ),
+                )
+                break
+            except Exception as e:
+                print(f"⚠️ Model {model_name} bận, thử model tiếp theo...")
+
+        if not response:
+            raise RuntimeError("❌ Tất cả model đều thất bại khi tạo nội dung bài viết.")
+
+        return {
+            "id": post_info.get("id"),
+            "day": post_info.get("day", "Thứ 2"),
+            "channel": channel,
+            "format_type": format_type,
+            "angle": angle,
+            "content": response.text.strip(),
+            "source_url": material.get("source_url") if (format_type == "FB_LEAD_GEN" or "Dạng 1" in angle) else "",
+            "status": "Drafted"
+        }
+
+    def generate_all_drafts(self, plan_data: dict) -> dict:
+        posts = plan_data.get("posts", [])
+        drafted_posts = []
+
+        for p in posts:
+            draft = self.write_single_post(p)
+            drafted_posts.append(draft)
+
+        result_data = {
+            "plan_topic": plan_data.get("week_topic", ""),
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "drafts": drafted_posts
+        }
+
+        os.makedirs("data", exist_ok=True)
+        file_path = f"data/weekly_drafts_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(result_data, f, ensure_ascii=False, indent=2)
+
+        return result_data
