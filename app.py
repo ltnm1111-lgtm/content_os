@@ -5,6 +5,17 @@ import sys
 import glob
 import streamlit as st
 
+# --- IMPORT THÊM Ở ĐẦU FILE APP.PY ---
+from modules.agent_writer import WriterAgent
+
+def get_latest_drafts():
+    files = glob.glob("data/weekly_drafts_*.json")
+    if not files:
+        return None
+    latest_file = max(files, key=os.path.getctime)
+    with open(latest_file, "r", encoding="utf-8") as f:
+        return json.load(f)
+
 # Tự động nạp thư mục gốc vào hệ thống
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -185,3 +196,72 @@ if has_plan:
             st.info("Hãy nhập lại chủ đề trên thanh tìm kiếm và bấm Kích hoạt lại.")
 else:
     st.info("Chưa có kế hoạch nào được tạo. Hãy bấm nút phía trên để Agent bắt đầu làm việc.")
+
+# --- KHU VỰC CHẶNG 2: BẢN THẢO BÀI VIẾT TỪ AGENT WRITER ---
+st.divider()
+st.header("✍️ Chặng 2: Tạo Bản thảo Nội dung Chi tiết (Writer Agent)")
+
+if "latest_plan" in st.session_state or os.path.exists("data/latest_plan.json"):
+    if st.button("🚀 Kích hoạt Writer Agent (Viết bài hàng loạt cho toàn bộ Plan)", type="primary"):
+        with st.spinner("🤖 Writer Agent đang nhập vai 'Chị Đại' viết bài & kịch bản..."):
+            try:
+                # Đọc plan mới nhất
+                with open("data/latest_plan.json", "r", encoding="utf-8") as f:
+                    latest_plan = json.load(f)
+                
+                writer = WriterAgent()
+                drafts = writer.generate_all_drafts(latest_plan)
+                st.success("✅ Writer Agent đã hoàn thành toàn bộ bản thảo cho tuần!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Lỗi khi tạo bài viết: {str(e)}")
+
+# --- HIỂN THỊ KẾT QUẢ BÀI VIẾT THEO THỨ TRONG TUẦN & NỀN TẢNG ---
+latest_drafts = get_latest_drafts()
+if latest_drafts:
+    st.subheader(f"📅 Bản thảo Tuần (Chủ đề: {latest_drafts.get('plan_topic')})")
+    
+    drafts = latest_drafts.get("drafts", [])
+    
+    # Gom nhóm bài viết theo Thứ trong tuần
+    days_order = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"]
+    
+    for day in days_order:
+        day_posts = [p for p in drafts if p.get("day") == day or p.get("day") == f"Thứ {days_order.index(day)+2}"]
+        
+        if day_posts or any(p.get("day") == day for p in drafts):
+            st.markdown(f"### 🗓️ {day}")
+            
+            posts_to_show = [p for p in drafts if p.get("day") == day]
+            if not posts_to_show:
+                posts_to_show = day_posts
+
+            for post in posts_to_show:
+                channel = post.get("channel", "Facebook")
+                fmt = post.get("format_type", "")
+                
+                # Tag nhãn nền tảng & dạng bài
+                if "TikTok" in channel:
+                    badge = "🎵 TikTok Script"
+                elif fmt == "FB_LEAD_GEN" or "Dạng 1" in post.get("angle", ""):
+                    badge = "📘 FB Dạng 1: Tặng Tài Liệu (Lead Gen)"
+                elif fmt == "FB_QUIZ" or "Dạng 2" in post.get("angle", ""):
+                    badge = "📘 FB Dạng 2: Quiz Tương Tác (Reaction)"
+                else:
+                    badge = "📘 FB Dạng 3: Text-Overlay Video"
+
+                with st.expander(f"{badge} | Angle: {post.get('angle')}", expanded=True):
+                    # HIỂN THỊ LINK URL TÀI LIỆU GỐC CHO FB DẠNG 1
+                    if post.get("source_url"):
+                        st.info(f"🔗 **URL Tài liệu học tập gốc:** [{post.get('source_url')}]({post.get('source_url')})")
+                    
+                    st.markdown("**Nội dung chi tiết:**")
+                    st.markdown(post.get("content"))
+                    
+                    # Ô chỉnh sửa trực tiếp Co-pilot
+                    st.text_area(
+                        "✏️ Co-pilot (Chỉnh sửa nội dung nếu muốn):",
+                        value=post.get("content"),
+                        key=f"edit_{post.get('id')}_{day}",
+                        height=200
+                    )
