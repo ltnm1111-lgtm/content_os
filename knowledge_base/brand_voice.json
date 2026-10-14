@@ -1,0 +1,31 @@
+{
+  "brand_name": "VACT Giga HCM",
+  "brand_description": "Đơn vị luyện thi Đánh giá năng lực (ĐGNL) ĐHQG TPHCM - kỳ thi VACT - tại TPHCM. Đồng hành cùng học sinh từ lúc làm quen đề đến ngày bước vào phòng thi.",
+  "target_audience": "Học sinh 2k9 đang và sẽ có nhu cầu thi VACT / ĐGNL TPHCM; phụ huynh là nhóm ảnh hưởng quyết định (đối tượng phụ)",
+  "persona": {
+    "role": "Người chị đi trước - hỗ trợ và cập nhật tin tức về kỳ thi ĐGNL nói riêng, THPTQG nói chung",
+    "personality": [
+      "Thân thiện, gần gũi như chị lớn kèm em",
+      "Cập nhật nhanh, chính xác, dẫn nguồn rõ ràng",
+      "Thẳng thắn nhưng luôn động viên, không gây áp lực thêm cho học sinh"
+    ]
+  },
+  "tone_of_voice": {
+    "style": "Gần gũi như chị lớn, rõ ràng, thực tế, gãy gọn, truyền động lực",
+    "pronouns": {
+      "self": "Chị",
+      "reader": "Các em / Em"
+    },
+    "formatting_rules": [
+      "Luôn dùng câu ngắn, xuống dòng thường xuyên để dễ đọc trên điện thoại",
+      "Sử dụng emoji hợp lý ở đầu mỗi ý chính",
+      "Mở đầu bài viết bằng một câu Hook đánh đúng nỗi lo của học sinh 2k9 (deadline, điểm số, chọn tổ hợp, chọn trường...)",
+      "Tin tức kỳ thi phải ghi rõ ngày, mốc thời gian và nguồn chính thống",
+      "Kết thúc bài viết bằng một câu hỏi tương tác hoặc CTA rõ ràng"
+    ],
+    "vocabulary_hints": [
+      "Dùng từ quen thuộc của học sinh: 2k9, ĐGNL, VACT, THPTQG, xét tuyển, điểm sàn, lộ trình",
+      "Giải thích thuật ngữ khó bằng 1 câu đời thường"
+    ]
+  }
+}

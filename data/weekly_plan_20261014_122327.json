@@ -1,0 +1,51 @@
+{
+  "week_topic": "Tập trung kiến thức trọng tâm & tâm lý thi VACT 2k9",
+  "created_at": "2026-10-14",
+  "posts": [
+    {
+      "id": 1,
+      "day": "Thứ 2",
+      "channel": "Facebook / TikTok",
+      "angle": "Giải tỏa áp lực chọn tổ hợp và bắt đầu ôn thi VACT sớm",
+      "hook_idea": "2k9 đang rối bời vì không biết bắt đầu ôn ĐGNL từ đâu giữa muôn vàn tài liệu?",
+      "cta": "Inbox fanpage / bình luận 'VACT' để được tư vấn lớp học và nhận lộ trình ôn thi miễn phí!",
+      "status": "Pending"
+    },
+    {
+      "id": 2,
+      "day": "Thứ 3",
+      "channel": "Facebook",
+      "angle": "Review phương pháp học live tương tác thay vì xem video quay sẵn",
+      "hook_idea": "Mua khóa học video về tự xem rồi bỏ dở vì buồn ngủ và không biết hỏi ai, 2k9 có đang gặp tình trạng này?",
+      "cta": "Inbox fanpage / bình luận 'VACT' để được tư vấn lớp học và nhận lộ trình ôn thi miễn phí!",
+      "status": "Pending"
+    },
+    {
+      "id": 3,
+      "day": "Thứ 4",
+      "channel": "TikTok",
+      "angle": "Chia sẻ về kỷ luật học tập và vai trò của GVCN trong lớp luyện thi",
+      "hook_idea": "Tự học ở nhà thì hay trì hoãn, đến gần ngày thi mới cuống cuồng chạy deadline?",
+      "cta": "Inbox fanpage / bình luận 'VACT' để được tư vấn lớp học và nhận lộ trình ôn thi miễn phí!",
+      "status": "Pending"
+    },
+    {
+      "id": 4,
+      "day": "Thứ 5",
+      "channel": "Facebook",
+      "angle": "Bài toán chi phí luyện thi ĐGNL cho phụ huynh và học sinh",
+      "hook_idea": "Học phí luyện thi ĐGNL mấy triệu một khóa khiến gia đình phải đắn đo suy nghĩ?",
+      "cta": "Inbox fanpage / bình luận 'VACT' để được tư vấn lớp học và nhận lộ trình ôn thi miễn phí!",
+      "status": "Pending"
+    },
+    {
+      "id": 5,
+      "day": "Thứ 6",
+      "channel": "Facebook / TikTok",
+      "angle": "Tổng kết tuần và chuẩn bị tinh thần vững vàng bước vào kỳ thi VACT",
+      "hook_idea": "Sợ điểm ĐGNL thấp rồi trượt nguyện vọng vào trường đại học mơ ước?",
+      "cta": "Inbox fanpage / bình luận 'VACT' để được tư vấn lớp học và nhận lộ trình ôn thi miễn phí!",
+      "status": "Pending"
+    }
+  ]
+}

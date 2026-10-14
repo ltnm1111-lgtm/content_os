@@ -1,0 +1,51 @@
+{
+  "week_topic": "Tập trung kiến thức trọng tâm & tâm lý thi VACT 2k9",
+  "created_at": "2026-10-14",
+  "posts": [
+    {
+      "id": 1,
+      "day": "Thứ 2",
+      "channel": "Facebook Fanpage",
+      "angle": "Giải tỏa tâm lý choáng ngợp và hướng dẫn lọc kiến thức cốt lõi VACT",
+      "hook_idea": "2k9 ơi, có phải em đang nhìn vào đề ĐGNL 120 câu rộng mênh mông rồi hoang mang không biết bắt đầu từ môn nào?",
+      "cta": "Bình luận phần môn em đang thấy 'rén' nhất bên dưới, chị gửi tặng checklist kiến thức trọng tâm để em ôn trúng đích nha!",
+      "status": "Pending"
+    },
+    {
+      "id": 2,
+      "day": "Thứ 3",
+      "channel": "TikTok & Facebook Reels",
+      "angle": "Khoanh vùng trọng tâm phần Tư duy logic & Phân tích số liệu",
+      "hook_idea": "Đừng cắm đầu giải cả ngàn câu khó, đề VACT kiểm tra tư duy xử lý số liệu chứ không đánh đố mẹo vặt như em nghĩ đâu!",
+      "cta": "Lưu video lại ôn ngay và inbox fanpage để nhận bộ bài tập phân tích số liệu có đáp án chi tiết từ thầy cô nhé!",
+      "status": "Pending"
+    },
+    {
+      "id": 3,
+      "day": "Thứ 4",
+      "channel": "Facebook Fanpage",
+      "angle": "Tâm lý tự học: Trị dứt điểm chứng trì hoãn và mất động lực",
+      "hook_idea": "Hôm nay định dành cả tối ôn ĐGNL nhưng mở đề ra 10 phút lại lướt điện thoại? Em không hề cô đơn đâu...",
+      "cta": "Nếu cần người đồng hành nhắc nhở mỗi ngày, inbox hoặc bình luận 'VACT' để tham gia lớp live 40 bạn cùng GVCN quản lý sát sao nhé!",
+      "status": "Pending"
+    },
+    {
+      "id": 4,
+      "day": "Thứ 5",
+      "channel": "Facebook Fanpage",
+      "angle": "Tránh bẫy mất điểm oan ở phần Đọc hiểu - Ngôn ngữ",
+      "hook_idea": "Nghĩ tiếng mẹ đẻ dễ xơi, nhưng thực tế rất nhiều bạn 2k9 mất điểm oan ở phần Ngôn ngữ VACT chỉ vì 3 lỗi kinh điển này!",
+      "cta": "Em có đang mắc phải lỗi nào ở trên không? Thử giải câu ví dụ ở comment, chị và đội ngũ GVCN sẽ sửa giúp em liền!",
+      "status": "Pending"
+    },
+    {
+      "id": 5,
+      "day": "Thứ 7",
+      "channel": "Facebook Fanpage & TikTok",
+      "angle": "Cân bằng thời gian: Học bạ trên lớp và ôn thi VACT không bị kiệt sức",
+      "hook_idea": "Vừa gánh bài kiểm tra trên trường, vừa lo đề ĐGNL chưa kịp giải: Làm sao để 2k9 không bị 'cháy máy' giai đoạn này?",
+      "cta": "Bình luận 'VACT' để chị gửi tặng bảng phân bổ thời gian học thông minh và nhận tư vấn lộ trình ôn thi phù hợp nhất với em nghen!",
+      "status": "Pending"
+    }
+  ]
+}

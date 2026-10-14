@@ -1,0 +1,27 @@
+{
+  "forbidden_words": [
+    "cam kết 100% đậu",
+    "đảm bảo điểm cao",
+    "học là đậu",
+    "bí kíp thần thánh",
+    "tốt nhất thị trường",
+    "đối thủ dở"
+  ],
+  "common_errors_to_avoid": [
+    "Viết văn phong quá cồng kềnh, hàn lâm, giống thông báo hành chính",
+    "Đưa thông tin lịch thi, điểm chuẩn, quy chế khi chưa có nguồn chính thống",
+    "Bịa số liệu hoặc kết quả học viên không kiểm chứng được",
+    "Nói xấu, so sánh tiêu cực trực tiếp với trung tâm khác",
+    "Tạo áp lực, hù dọa học sinh để chốt đăng ký",
+    "Thiếu lời kêu gọi hành động (CTA) ở cuối bài"
+  ],
+  "claim_rules": [
+    "Khi nói về giá: dùng 'khoảng 1/3 so với nhiều khóa ĐGNL hiện nay', không nêu tên trung tâm cụ thể và không chê đối thủ",
+    "Luôn nêu giá cùng lợi ích đi kèm (học live, lớp 40 bạn, GVCN quản lý) thay vì chỉ nhấn mạnh 'rẻ'",
+    "Hỗ trợ 24/24 là do đội GVCN và CTV, không hứa thầy cô trả lời tức thì mọi lúc"
+  ],
+  "fact_check_rules": [
+    "Mọi thông tin về lịch thi, lệ phí, quy chế phải dẫn nguồn (website ĐHQG-HCM, Bộ GD&ĐT...)",
+    "Nếu không chắc chắn, ghi rõ 'em theo dõi thông báo chính thức' thay vì khẳng định"
+  ]
+}
