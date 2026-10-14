@@ -4,7 +4,6 @@ import os
 import sys
 from datetime import datetime
 
-# Tự động nạp thư mục gốc dự án
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
@@ -22,7 +21,6 @@ DEFAULT_FALLBACK_MODELS = [
 ]
 
 def get_available_models(client):
-    """Tự động quét danh sách tên model khả dụng từ API Key của bạn."""
     try:
         models = []
         for m in client.models.list():
@@ -53,16 +51,15 @@ class WriterAgent:
             raise ValueError("❌ Không tìm thấy GEMINI_API_KEY cho Writer Agent!")
 
         self.client = genai.Client(api_key=self.api_key)
-        self.index_file = os.path.join("knowledge_base", "materials_index.json")
 
-    def _get_latest_material() -> dict:
+    def _get_latest_material(self) -> dict:
         """Đọc bộ tài liệu mới nhất từ kho MaterialAgent."""
         if os.path.exists("knowledge_base/materials_index.json"):
             try:
                 with open("knowledge_base/materials_index.json", "r", encoding="utf-8") as f:
                     materials = json.load(f)
                     if materials:
-                        return materials[-1] # Lấy tài liệu mới nhất
+                        return materials[-1]
             except Exception:
                 pass
         return {
@@ -73,17 +70,16 @@ class WriterAgent:
         }
 
     def write_single_post(self, post_info: dict) -> dict:
-        """Sáng tạo bài viết/kịch bản chi tiết theo từng định dạng."""
         channel = post_info.get("channel", "Facebook")
-        format_type = post_info.get("format_type", "FB_LEAD_GEN") # FB_LEAD_GEN, FB_QUIZ, FB_TEXT_OVERLAY, TIKTOK
+        format_type = post_info.get("format_type", "FB_LEAD_GEN")
         angle = post_info.get("angle", "")
         hook_idea = post_info.get("hook_idea", "")
         cta = post_info.get("cta", "")
 
+        # Đã sửa thêm self vào đây
         material = self._get_latest_material()
         system_instruction = self.brain.get_system_context()
 
-        # Build prompt tùy biến theo 4 định dạng
         if "TikTok" in channel or format_type == "TIKTOK":
             format_req = """
 ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (Kịch bản TikTok):
@@ -114,7 +110,7 @@ class WriterAgent:
    😲 D. [Đáp án D]
 💬 [CTA]: Thúc đẩy học sinh thả cảm xúc tương ứng để chọn đáp án đúng.
 """
-        else: # FB_TEXT_OVERLAY (Dạng 3)
+        else:
             format_req = """
 ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (Facebook Dạng 3 - Text-Overlay Video):
 📝 [VĂN BẢN CHÈN VIDEO DỌC]:
@@ -165,7 +161,6 @@ Hãy viết bài dựa trên thông tin sau:
         }
 
     def generate_all_drafts(self, plan_data: dict) -> dict:
-        """Duyệt qua lịch tuần và viết bài hàng loạt."""
         posts = plan_data.get("posts", [])
         drafted_posts = []
 
