@@ -5,13 +5,16 @@ import sys
 import glob
 import streamlit as st
 
+# Tự động nạp thư mục gốc vào hệ thống
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Nạp API Key từ Streamlit Secrets vào biến môi trường
 if "GEMINI_API_KEY" in st.secrets:
     os.environ["GEMINI_API_KEY"] = st.secrets["GEMINI_API_KEY"]
 
 from modules.agent_planner import PlannerAgent
 from modules.agent_writer import WriterAgent
+from modules.material_agent import MaterialAgent
 from modules.social_scraper import fetch_all_competitor_insights
 
 # --- CẤU HÌNH TRANG WEB ---
@@ -20,6 +23,7 @@ st.set_page_config(page_title="VACT Giga - Content OS", page_icon="🚀", layout
 st.title("🤖 VACT Giga HCM - AI Content OS Dashboard")
 st.caption("Hệ thống quản trị và vận hành đội ngũ AI Agent tự động")
 
+# --- HÀM HỖ TRỢ ĐỌC DỮ LIỆU ---
 def get_latest_plan():
     files = glob.glob("data/weekly_plan_*.json")
     if not files:
@@ -46,9 +50,9 @@ has_plan = latest_plan is not None
 with col1:
     st.metric(label="Agent 1 & 2 (Research & Plan)", value="🟢 Đã sẵn sàng")
 with col2:
-    st.metric(label="Agent 3 (Writer)", value="🟢 Đã sẵn sàng" if has_plan else "⚪ Chờ Plan")
+    st.metric(label="Material Agent (Tài liệu)", value="🟢 Đã sẵn sàng")
 with col3:
-    st.metric(label="Agent 4 (Evaluator)", value="🟢 Đã sẵn sàng" if has_plan else "⚪ Chờ Bài viết")
+    st.metric(label="Agent 3 (Writer)", value="🟢 Đã sẵn sàng" if has_plan else "⚪ Chờ Plan")
 with col4:
     st.metric(label="Kế hoạch hiện tại", value=os.path.basename(file_path) if file_path else "Chưa có")
 
@@ -96,7 +100,7 @@ if st.button("➕ Thêm Kênh vào Hệ thống"):
             st.success("✅ Đã thêm kênh vào hệ thống!")
             st.rerun()
         else:
-            st.warning("⚠️ Kênh này đã có trong danh sách theo dõi!")
+            st.warning(⚠️ Kênh này đã có trong danh sách theo dõi!")
 
 st.caption("📋 Danh sách các kênh Agent đang theo dõi:")
 st.json(st.session_state["comp_data"]["user_provided_channels"])
@@ -128,6 +132,23 @@ if st.button("🚀 Kích hoạt Agent 1 & 2 (Nghiên cứu & Lên Plan)", type="
         except Exception as e:
             st.error(f"❌ Lỗi khi chạy Agent: {str(e)}")
 
+# HIỂN THỊ DỮ LIỆU CÀO ĐỐI THỦ
+research_file = "data/latest_research.json"
+if os.path.exists(research_file):
+    try:
+        with open(research_file, "r", encoding="utf-8") as f:
+            latest_research = json.load(f)
+        with st.expander("🔍 Xem dữ liệu cào từ các kênh đối thủ & Trend", expanded=False):
+            col_r1, col_r2 = st.columns(2)
+            with col_r1:
+                st.subheader("1. Insight kênh chỉ định:")
+                st.json(latest_research.get("user_channels_insights", []))
+            with col_r2:
+                st.subheader("2. Trend tự phát hiện:")
+                st.json(latest_research.get("auto_discovered_trends", []))
+    except Exception:
+        pass
+
 # HIỂN THỊ KẾ HOẠCH & DUYỆT TỰ ĐỘNG CHUYỂN CHẶNG 2
 if has_plan:
     st.subheader(f"📅 Bảng Kế hoạch Tuần (Tạo ngày: {latest_plan.get('created_at', 'N/A')})")
@@ -139,10 +160,11 @@ if has_plan:
             "id": "STT",
             "day": "Thứ",
             "channel": "Kênh",
+            "format_type": "Định dạng",
+            "subject": "Môn học",
             "angle": "Góc nhìn (Angle)",
             "hook_idea": "Gợi ý câu Hook",
-            "cta": "CTA",
-            "status": "Trạng thái"
+            "cta": "CTA"
         },
         use_container_width=True
     )
@@ -153,14 +175,29 @@ if has_plan:
     col_approve, col_reject = st.columns([1, 4])
     with col_approve:
         if st.button("✅ DUYỆT PLAN & TỰ ĐỘNG VIẾT BÀI", type="primary", key="btn_approve_plan"):
-            with st.spinner("🤖 Bạn đã duyệt Plan! Writer Agent đang tự động viết bài & kịch bản..."):
+            with st.spinner("🤖 Hệ thống đang: 1. Tìm tài liệu thật -> 2. Trích Quiz -> 3. Viết bài hàng loạt..."):
                 try:
-                    # Ghi file latest_plan.json
+                    # 1. Ghi file latest_plan.json
                     os.makedirs("data", exist_ok=True)
                     with open("data/latest_plan.json", "w", encoding="utf-8") as f:
                         json.dump(latest_plan, f, ensure_ascii=False, indent=2)
-                    
-                    # Tự động gọi Writer Agent sinh bài viết ngay tại đây
+
+                    # 2. Gọi MaterialAgent để cào tài liệu thật cho từng môn học trong kế hoạch
+                    mat_agent = MaterialAgent()
+                    for p in posts:
+                        fmt = p.get("format_type", "")
+                        subject = p.get("subject", "")
+                        if fmt in ["FB_LEAD_GEN", "FB_QUIZ"] and subject:
+                            st.toast(f"🔍 Đang cào tài liệu thật cho môn: {subject}...")
+                            try:
+                                if hasattr(mat_agent, "collect_and_package_materials"):
+                                    mat_agent.collect_and_package_materials(subject=subject, target_count=1)
+                                elif hasattr(mat_agent, "collect_and_package_material"):
+                                    mat_agent.collect_and_package_material(subject=subject)
+                            except Exception as mat_err:
+                                print(f"⚠️ MaterialAgent warning đối với môn {subject}: {mat_err}")
+
+                    # 3. Kích hoạt WriterAgent sinh bài viết hàng loạt
                     writer = WriterAgent()
                     drafts = writer.generate_all_drafts(latest_plan)
                     
@@ -168,7 +205,7 @@ if has_plan:
                     st.success("🎉 Đã duyệt Plan và tạo xong toàn bộ bài viết Chặng 2!")
                     st.rerun()
                 except Exception as e:
-                    st.error(f"❌ Lỗi khi viết bài tự động: {str(e)}")
+                    st.error(f"❌ Lỗi quy trình: {str(e)}")
 
     with col_reject:
         if st.button("❌ Bỏ qua / Tạo lại Plan khác", key="btn_reject_plan"):
@@ -199,7 +236,7 @@ if latest_drafts:
                 channel = post.get("channel", "Facebook")
                 fmt = post.get("format_type", "")
                 
-                if "TikTok" in channel:
+                if "TikTok" in channel or fmt == "TIKTOK":
                     badge = "🎵 TikTok Script"
                 elif fmt == "FB_LEAD_GEN" or "Dạng 1" in post.get("angle", ""):
                     badge = "📘 FB Dạng 1: Tặng Tài Liệu (Lead Gen)"
@@ -209,6 +246,7 @@ if latest_drafts:
                     badge = "📘 FB Dạng 3: Text-Overlay Video"
 
                 with st.expander(f"{badge} | Angle: {post.get('angle')}", expanded=True):
+                    # Chỉ hiển thị URL khi bài viết thực sự có source_url (Dạng 1)
                     if post.get("source_url"):
                         st.info(f"🔗 **URL Tài liệu học tập gốc:** [{post.get('source_url')}]({post.get('source_url')})")
                     
@@ -222,4 +260,4 @@ if latest_drafts:
                         height=200
                     )
 else:
-    st.info("💡 Hãy bấm nút **'✅ DUYỆT PLAN & TỰ ĐỘNG VIẾT BÀI'** ở trên để Writer Agent xuất bản thảo tại đây.")
+    st.info("💡 Hãy bấm nút **'✅ DUYỆT PLAN & TỰ ĐỘNG VIẾT BÀI'** ở trên để hệ thống tạo bản thảo tại đây.")
