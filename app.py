@@ -182,7 +182,7 @@ if has_plan:
                     with open("data/latest_plan.json", "w", encoding="utf-8") as f:
                         json.dump(latest_plan, f, ensure_ascii=False, indent=2)
 
-                    # 2. Gọi MaterialAgent để cào tài liệu thật cho từng môn học trong kế hoạch
+                    # 2. Gọi MaterialAgent cào tài liệu thật cho từng môn học trong kế hoạch
                     mat_agent = MaterialAgent()
                     for p in posts:
                         fmt = p.get("format_type", "")
@@ -246,7 +246,6 @@ if latest_drafts:
                     badge = "📘 FB Dạng 3: Text-Overlay Video"
 
                 with st.expander(f"{badge} | Angle: {post.get('angle')}", expanded=True):
-                    # Chỉ hiển thị URL khi bài viết thực sự có source_url (Dạng 1)
                     if post.get("source_url"):
                         st.info(f"🔗 **URL Tài liệu học tập gốc:** [{post.get('source_url')}]({post.get('source_url')})")
                     
