@@ -69,66 +69,50 @@ class WriterAgent:
             "sample_content": "Tom's work as a college admissions officer, who is part-time, brings him some social skills."
         }
 
-    def write_single_post(self, post_info: dict) -> dict:
+def write_single_post(self, post_info: dict) -> dict:
         channel = post_info.get("channel", "Facebook")
         format_type = post_info.get("format_type", "FB_LEAD_GEN")
         angle = post_info.get("angle", "")
         hook_idea = post_info.get("hook_idea", "")
         cta = post_info.get("cta", "")
 
-        # Đã sửa thêm self vào đây
-        material = self._get_latest_material()
+        # NHẬN DIỆN CHÍNH XÁC BÀI DẠNG 1
+        is_fb_lead_gen = (format_type == "FB_LEAD_GEN" or "Dạng 1" in angle)
+
+        material = self._get_latest_material() if is_fb_lead_gen else {}
         system_instruction = self.brain.get_system_context()
 
         if "TikTok" in channel or format_type == "TIKTOK":
             format_req = """
 ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (Kịch bản TikTok):
-🎬 [3S HOOK ĐẦU]: Câu nói/cảnh quay cực giật gân, xoáy sâu vào tâm lý 2k9 thi VACT.
+🎬 [3S HOOK ĐẦU]: Câu nói/cảnh quay cực giật gân.
 🎥 [VISUAL NOTES]: Gợi ý chi tiết góc quay, hình ảnh đính kèm.
 🎙️ [AUDIO DIALOGUE]: Lời thoại dồn dập, tự nhiên chuẩn giọng 'Chị đại'.
-🎯 [CTA]: Lời kêu gọi ngắn gọn thúc đẩy bình luận/inbox.
+🎯 [CTA]: Lời kêu gọi ngắn gọn.
 """
-        elif format_type == "FB_LEAD_GEN" or "Tặng Tài liệu" in angle or "Dạng 1" in angle:
+        elif is_fb_lead_gen:
             format_req = f"""
 ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (Facebook Dạng 1 - Tặng Tài Liệu Lead Gen):
-📌 [TIÊU ĐỀ]: In hoa, giật gân, dùng emoji gây chú ý về bộ tài liệu: '{material.get("title")}'.
-💎 [TÓM TẮT GIÁ TRỊ]: 3-4 dòng bullet points nêu rõ tài liệu giúp ích gì cho sĩ tử 2k9.
-👇 [CÔNG THỨC 3 BƯỚC NHẬN TÀI LIỆU]:
-   - Bước 1: Thả tim bài viết
-   - Bước 2: Share bài viết
-   - Bước 3: Comment từ khóa '{material.get("cta_keyword")}'
-🔗 [NỘI DUNG TÀI LIỆU GỐC]: Đính kèm thông tin tham khảo nguồn {material.get("source_url")}.
+📌 [TIÊU ĐỀ]: In hoa, giật gân về tài liệu: '{material.get("title", "TÀI LIỆU VACT")}'.
+💎 [TÓM TẮT GIÁ TRỊ]: 3-4 dòng bullet points.
+👇 [CÔNG THỨC 3 BƯỚC NHẬN TÀI LIỆU]: Thả tim -> Share -> Comment từ khóa '{material.get("cta_keyword", "VACT")}'
 """
-        elif format_type == "FB_QUIZ" or "Quiz" in angle or "Dạng 2" in angle:
-            format_req = f"""
+        elif format_type == "FB_QUIZ" or "Dạng 2" in angle:
+            format_req = """
 ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (Facebook Dạng 2 - Quiz Tương Tác Thả Icon):
-❓ [ĐỀ BÀI/CÂU HỎI]: Trích xuất hoặc biên soạn 1 câu hỏi/lỗi sai ngắn gọn từ tài liệu: '{material.get("sample_content")}'.
-🎯 [4 ĐÁP ÁN GẮN ICON REACTION]:
-   😆 A. [Đáp án A]
-   👍 B. [Đáp án B]
-   ❤️ C. [Đáp án C]
-   😲 D. [Đáp án D]
-💬 [CTA]: Thúc đẩy học sinh thả cảm xúc tương ứng để chọn đáp án đúng.
+❓ [ĐỀ BÀI/CÂU HỎI]: Biên soạn 1 câu hỏi trắc nghiệm/lỗi sai.
+🎯 [4 ĐÁP ÁN GẮN ICON REACTION]: 😆 A. | 👍 B. | ❤️ C. | 😲 D.
+💬 [CTA]: Thúc đẩy học sinh thả icon.
 """
         else:
             format_req = """
 ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (Facebook Dạng 3 - Text-Overlay Video):
-📝 [VĂN BẢN CHÈN VIDEO DỌC]:
-- Viết thành các dòng ngắn gọn dạng đạn (bullet points), thoáng mắt.
-- Dùng emoji sinh động (🧠, 💡, ⚡, 🎯) ở đầu mỗi dòng.
-- Không viết lời chào hay văn xuôi dài, đảm bảo ngắt dòng chuẩn để chèn vừa màn hình TikTok/Reels.
+📝 [VĂN BẢN CHÈN VIDEO DỌC]: Viết thành các dòng ngắn gọn (bullet points), ngắt dòng chuẩn, emoji sinh động (không chào hỏi, không viết văn xuôi).
 """
 
-        prompt = f"""
-Bạn là Agent Writer (Chị Đại VACT Giga HCM).
-Hãy viết bài dựa trên thông tin sau:
-- Nền tảng: {channel}
-- Angle: {angle}
-- Gợi ý Hook: {hook_idea}
-- Target CTA: {cta}
-
-{format_req}
-"""
+        prompt = f"""Bạn là Agent Writer. Viết bài với thông tin:
+- Nền tảng: {channel} | Angle: {angle} | Hook: {hook_idea} | CTA: {cta}
+{format_req}"""
 
         models_to_try = get_available_models(self.client)
         response = None
@@ -180,3 +164,15 @@ Hãy viết bài dựa trên thông tin sau:
             json.dump(result_data, f, ensure_ascii=False, indent=2)
 
         return result_data
+
+# ĐẢM BẢO CHỈ TRẢ VỀ URL KHI ĐÚNG DẠNG 1
+        return {
+            "id": post_info.get("id"),
+            "day": post_info.get("day", "Thứ 2"),
+            "channel": channel,
+            "format_type": format_type,
+            "angle": angle,
+            "content": response.text.strip(),
+            "source_url": material.get("source_url", "") if is_fb_lead_gen else "",
+            "status": "Drafted"
+        }
