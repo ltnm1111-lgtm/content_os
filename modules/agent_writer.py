@@ -69,7 +69,7 @@ class WriterAgent:
             "sample_content": "Tom's work as a college admissions officer, who is part-time, brings him some social skills."
         }
 
-def write_single_post(self, post_info: dict) -> dict:
+    def write_single_post(self, post_info: dict) -> dict:
         channel = post_info.get("channel", "Facebook")
         format_type = post_info.get("format_type", "FB_LEAD_GEN")
         angle = post_info.get("angle", "")
@@ -133,6 +133,7 @@ def write_single_post(self, post_info: dict) -> dict:
         if not response:
             raise RuntimeError("❌ Tất cả model đều thất bại khi tạo nội dung bài viết.")
 
+        # ĐẢM BẢO CHỈ TRẢ VỀ URL KHI ĐÚNG DẠNG 1
         return {
             "id": post_info.get("id"),
             "day": post_info.get("day", "Thứ 2"),
@@ -140,7 +141,7 @@ def write_single_post(self, post_info: dict) -> dict:
             "format_type": format_type,
             "angle": angle,
             "content": response.text.strip(),
-            "source_url": material.get("source_url") if (format_type == "FB_LEAD_GEN" or "Dạng 1" in angle) else "",
+            "source_url": material.get("source_url", "") if is_fb_lead_gen else "",
             "status": "Drafted"
         }
 
@@ -164,15 +165,3 @@ def write_single_post(self, post_info: dict) -> dict:
             json.dump(result_data, f, ensure_ascii=False, indent=2)
 
         return result_data
-
-# ĐẢM BẢO CHỈ TRẢ VỀ URL KHI ĐÚNG DẠNG 1
-        return {
-            "id": post_info.get("id"),
-            "day": post_info.get("day", "Thứ 2"),
-            "channel": channel,
-            "format_type": format_type,
-            "angle": angle,
-            "content": response.text.strip(),
-            "source_url": material.get("source_url", "") if is_fb_lead_gen else "",
-            "status": "Drafted"
-        }
