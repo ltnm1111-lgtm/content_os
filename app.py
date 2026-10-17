@@ -100,7 +100,7 @@ if st.button("➕ Thêm Kênh vào Hệ thống"):
             st.success("✅ Đã thêm kênh vào hệ thống!")
             st.rerun()
         else:
-            st.warning(⚠️ Kênh này đã có trong danh sách theo dõi!")
+            st.warning( Kênh này đã có trong danh sách theo dõi!")
 
 st.caption("📋 Danh sách các kênh Agent đang theo dõi:")
 st.json(st.session_state["comp_data"]["user_provided_channels"])
